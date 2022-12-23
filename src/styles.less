@@ -1,0 +1,399 @@
+@appBackground: #F9FAFB;
+@itemBackground: #F2F4F7;
+@itemBorder: #E4E7EC;
+@notSelected: #D0D5DD;
+@itemTitle: #101828;
+@primary: #1D2939;
+@secondary: #667085;
+@danger: #D92D20;
+@success: #12B76A;
+@warning: #fdb022;
+@link: #0000ee;
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+ul {
+    list-style-type: none;
+}
+
+button {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+}
+
+input, textarea {
+    background-color: transparent;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    pointer-events: none;
+    resize: none;
+}
+
+.center-contents {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.to-do-list {
+    width: 100%;
+    min-height: 100vh;
+    padding-bottom: 100px;
+    background-color: @appBackground;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    &--title {
+        font-weight: 700;
+        font-size: 28px;
+        margin: 60px 0;
+        color: @primary;
+    }
+
+    &--list {
+        width: 400px;
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    &--new-item-btn {
+        width: 100%;
+        border-radius: 15px;
+        border: solid 1px transparent;
+        height: 39px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+            background-color: @itemBackground;
+            border-color: @itemBorder;
+        }
+
+        &>svg {
+            fill: @notSelected;
+            height: 26px;
+        }
+    }
+}
+
+.to-do-item {
+    width: 100%;
+    border-radius: 15px;
+    overflow: hidden;
+    transition: height .3s;
+    border: solid 1px transparent;
+    height: 39px;
+    position: relative;
+    left: 0;
+    opacity: 1;
+
+    &:hover {
+        background-color: @itemBackground;
+        border-color: @itemBorder;
+
+        .to-do-item--expand-btn>svg {
+            fill: @notSelected;
+        }
+
+        .to-do-item--delete-btn>svg {
+            fill: @notSelected;
+        }
+    }
+
+    &--main-container {
+        padding: 4px 4px 13px;
+    }
+
+    &--first-line {
+        height: 29px;
+        display: flex;
+        align-items: center;
+    }
+
+    &--done-btn-container {
+        width: 29px;
+        height: 29px;
+        margin-right: 15px;
+        .center-contents();
+    }
+
+    &--done-btn {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background-color: @notSelected;
+    }
+
+    &--title {
+        font-weight: normal;
+        font-size: 18px;
+        line-height: 29px;
+        color: @itemTitle;
+    }
+
+    &--expand-btn {
+        .center-contents();
+        width: 29px;
+        height: 29px;
+        margin-left: auto;
+        margin-right: 15px;
+        transition: transform .3s;
+
+        &>svg {
+            fill: transparent;
+            height: 18px;
+        }
+
+        &:hover>svg {
+            fill: @primary !important;
+        }
+    }
+
+    &--delete-btn {
+        width: 29px;
+        height: 29px;
+        .center-contents();
+
+        &>svg {
+            fill: transparent;
+            height: 18px;
+        }
+
+        &:hover>svg {
+            fill: @danger !important;
+        }
+    }
+
+    &--description {
+        color: #667085;
+        font-size: 16px;
+        line-height: 1.6;
+        margin: 8px 0 18px;
+        width: 78%;
+        position: relative;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    &--bottom-line {
+        height: 56px;
+        display: flex;
+        align-items: center;
+        margin-left: 42px;
+    }
+    
+    &--attach-btn, &--edit-btn {
+        .center-contents();
+        width: 48px;
+        height: 100%;
+        
+        &>svg {
+            fill: @primary;
+            width: 26px;
+        }
+    }
+
+    &--attach-btn {
+        input {
+            display: none;
+        }
+    }
+
+    &--accept-btn {
+        .center-contents();
+        width: 48px;
+        height: 100%;
+        display: none;
+        
+        &>svg {
+            fill: @success;
+            width: 26px;
+        }
+    }
+
+    &__expanded {
+        background-color: @itemBackground;
+        border-color: @itemBorder;
+
+        .to-do-item--expand-btn {
+            transform: rotateZ(180deg);
+            
+            &>svg {
+                fill: @primary;
+            }
+        }
+
+        .to-do-item--delete-btn>svg {
+            fill: @danger;
+        }
+
+        &:hover {
+            .to-do-item--expand-btn {
+                transform: rotateZ(180deg);
+                
+                &>svg {
+                    fill: @primary;
+                }
+            }
+    
+            .to-do-item--delete-btn>svg {
+                fill: @danger;
+            }
+        }
+    }
+
+    &__editable {
+        transition: none;
+
+        input, textarea, .deadline {
+            pointer-events: auto;
+        }
+
+        .to-do-item--edit-btn {
+            display: none;
+        }
+
+        .to-do-item--accept-btn {
+            display: block;
+        }
+    }
+
+    &__deleted {
+        position: relative;
+        transition: 
+            opacity .2s cubic-bezier(0.39, 0.575, 0.565, 1), 
+            left .2s cubic-bezier(0.39, 0.575, 0.565, 1);
+        left: 50px;
+        opacity: 0;
+    }
+
+    &__expires-today {
+        border-color: @warning;
+
+        &:hover {
+            border-color: @warning;
+        }
+
+        .deadline {
+            background-color: @warning;
+        }
+    }
+
+    &__expired {
+        border-color: @danger;
+
+        &:hover {
+            border-color: @danger;
+        }
+
+        .deadline {
+            background-color: @danger;
+        }
+    }
+
+    &__done {
+        border-color: transparent;
+
+        &:hover {
+            border-color: @itemBorder;
+        }
+
+        &.to-do-item__expanded {
+            border-color: @itemBorder;
+        }
+
+        .to-do-item--done-btn {
+            background-color: @success;
+        }
+
+        .deadline {
+            background-color: @success;
+        }
+    }
+}
+
+.deadline {
+    font-size: 16px;
+    font-weight: 500;
+    height: 51px;
+    border-radius: 30px;
+    color: white;
+    background-color: @primary;
+    padding: 16px;
+    pointer-events: none;
+    margin-right: auto;
+
+    &--input {
+        position: absolute;
+        z-index: -1;
+    }
+}
+
+.attachments-list {
+    width: 100%;
+    border-top: solid 2px @itemBorder;
+    padding: 16px 42px;
+    background-color: @appBackground;
+
+    &--title {
+        font-size: 16px;
+        color: @secondary;
+    }
+
+    &--list {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+}
+
+.attachment-item {
+    height: 24px;
+    display: flex;
+    align-items: center;
+    border-radius: 3px;
+
+    &--download-btn {
+        font-size: 16px;
+        line-height: 24px;
+        text-align: left;
+        width: 290px;
+        overflow: hidden;
+        color: @link;
+        text-decoration: underline;
+    }
+
+    &--delete-btn {
+        .center-contents();
+        margin-left: auto;
+        width: 24px;
+        height: 24px;
+        fill: @danger;
+        box-shadow: @appBackground -18px 0px 6px 9px;
+
+        &>svg {
+            height: 10px;
+        }
+    }
+
+    &__editable {
+        .attachment-item--download-btn {
+            text-decoration: none;
+            color: @primary;
+            cursor: default;
+        }
+    }
+}
+
