@@ -162,14 +162,12 @@ export default function App() {
   }
 
   return (
-    <div>
-      <ToDoList
-        todos={todos}
-        handleNewItem={handleNewItem}
-        handleDone={handleDone}
-        deleteById={deleteById}
-        handleUpdate={handleUpdate}
-      />
-    </div>
+    <ToDoList
+      todos={todos}
+      handleNewItem={handleNewItem}
+      handleDone={handleDone}
+      deleteById={deleteById}
+      handleUpdate={handleUpdate}
+    />
   );
 }

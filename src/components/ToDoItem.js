@@ -197,7 +197,9 @@ export default function ToDoItem({ todo, todoId, handleDone, deleteById, handleU
           <div className="to-do-item--done-btn-container">
             <button className="to-do-item--done-btn" onClick={() => {handleDone(todoId)}}></button>
           </div>
-          <input type="text" className="to-do-item--title" defaultValue={todo.title} />
+          <div className="to-do-item--title-container">
+            <input type="text" className="to-do-item--title" defaultValue={todo.title} />
+          </div>
           <button className="to-do-item--expand-btn" onClick={handleExpand}>
             <svg viewBox="0 0 34 21">
               <path d="M18.4547 19.9695L33.1215 5.30264C33.8289 4.59527 33.8289 3.44845 33.1215 2.74116L31.4109 1.03051C30.7047 0.324348 29.5602 0.322989 28.8524 1.02749L17.1739 12.6513L5.49552 1.02749C4.7877 0.322989 3.64321 0.324348 2.93705 1.03051L1.2264 2.74116C0.519036 3.44853 0.519036 4.59535 1.2264 5.30264L15.8931 19.9695C16.6005 20.6768 17.7473 20.6768 18.4547 19.9695V19.9695Z"/>

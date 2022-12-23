@@ -9,11 +9,16 @@
 @success: #12B76A;
 @warning: #fdb022;
 @link: #0000ee;
+@expandButtonBoxShadow: @itemBackground 0px 0px 6px 18px;
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+html, body {
+    background-color: @appBackground;
 }
 
 ul {
@@ -44,6 +49,7 @@ input, textarea {
 
 .to-do-list {
     width: 100%;
+    min-width: 300px;
     min-height: 100vh;
     padding-bottom: 100px;
     background-color: @appBackground;
@@ -60,7 +66,8 @@ input, textarea {
     }
 
     &--list {
-        width: 400px;
+        width: 80%;
+        max-width: 400px;
         display: flex;
         flex-direction: column;
         gap: 30px;
@@ -102,12 +109,21 @@ input, textarea {
         background-color: @itemBackground;
         border-color: @itemBorder;
 
-        .to-do-item--expand-btn>svg {
-            fill: @notSelected;
+        .to-do-item--expand-btn {
+            box-shadow: @expandButtonBoxShadow;
+            display: flex;
+
+            &>svg {
+                fill: @notSelected;
+            }
         }
 
-        .to-do-item--delete-btn>svg {
-            fill: @notSelected;
+        .to-do-item--delete-btn {
+            display: flex;
+
+            &>svg {
+                fill: @notSelected;
+            }
         }
     }
 
@@ -122,10 +138,11 @@ input, textarea {
     }
 
     &--done-btn-container {
+        .center-contents();
         width: 29px;
         height: 29px;
         margin-right: 15px;
-        .center-contents();
+        flex-shrink: 0;
     }
 
     &--done-btn {
@@ -135,11 +152,22 @@ input, textarea {
         background-color: @notSelected;
     }
 
+    &--title-container {
+        height: 29px;
+        flex-grow: 1;        
+    }
+    
     &--title {
+        width: 100%;
         font-weight: normal;
         font-size: 18px;
         line-height: 29px;
         color: @itemTitle;
+        padding: 0 2px;
+
+        &:focus {
+            width: calc(100% - 22px);
+        }
     }
 
     &--expand-btn {
@@ -149,6 +177,8 @@ input, textarea {
         margin-left: auto;
         margin-right: 15px;
         transition: transform .3s;
+        border-radius: 50%;
+        display: none;
 
         &>svg {
             fill: transparent;
@@ -163,7 +193,9 @@ input, textarea {
     &--delete-btn {
         width: 29px;
         height: 29px;
+        flex-shrink: 0;
         .center-contents();
+        display: none;
 
         &>svg {
             fill: transparent;
@@ -180,23 +212,34 @@ input, textarea {
         font-size: 16px;
         line-height: 1.6;
         margin: 8px 0 18px;
-        width: 78%;
+        width: calc(100% - 88px);
         position: relative;
         left: 50%;
         transform: translateX(-50%);
+        padding: 0 2px;
+
+        @media screen and (max-width: 375px) {
+            width: calc(100% - 44px);
+            margin-top: 12px;
+        }
     }
 
     &--bottom-line {
         height: 56px;
         display: flex;
         align-items: center;
-        margin-left: 42px;
+        margin-left: 44px;
+
+        @media screen and (max-width: 375px) {
+            margin-left: 12px;
+        }
     }
     
     &--attach-btn, &--edit-btn {
         .center-contents();
         width: 48px;
         height: 100%;
+        flex-shrink: 0;
         
         &>svg {
             fill: @primary;
@@ -215,6 +258,7 @@ input, textarea {
         width: 48px;
         height: 100%;
         display: none;
+        flex-shrink: 0;
         
         &>svg {
             fill: @success;
@@ -227,28 +271,40 @@ input, textarea {
         border-color: @itemBorder;
 
         .to-do-item--expand-btn {
+            display: flex;
             transform: rotateZ(180deg);
+            box-shadow: @expandButtonBoxShadow;
             
             &>svg {
                 fill: @primary;
             }
         }
 
-        .to-do-item--delete-btn>svg {
-            fill: @danger;
+        .to-do-item--delete-btn {
+            display: flex;
+
+            &>svg {
+                fill: @danger;
+            }
         }
 
         &:hover {
             .to-do-item--expand-btn {
+                display: flex;
                 transform: rotateZ(180deg);
+                box-shadow: @expandButtonBoxShadow;
                 
                 &>svg {
                     fill: @primary;
                 }
             }
     
-            .to-do-item--delete-btn>svg {
-                fill: @danger;
+            .to-do-item--delete-btn {
+                display: flex;
+    
+                &>svg {
+                    fill: @danger;
+                }
             }
         }
     }
