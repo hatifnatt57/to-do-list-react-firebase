@@ -72,25 +72,23 @@ input, textarea {
         flex-direction: column;
         gap: 30px;
     }
+}
 
-    &--new-item-btn {
-        width: 100%;
-        border-radius: 15px;
-        border: solid 1px transparent;
-        height: 39px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+.new-item-btn {
+    .center-contents();
+    width: 100%;
+    border-radius: 15px;
+    border: solid 1px transparent;
+    height: 39px;
 
-        &:hover {
-            background-color: @itemBackground;
-            border-color: @itemBorder;
-        }
+    &:hover {
+        background-color: @itemBackground;
+        border-color: @itemBorder;
+    }
 
-        &>svg {
-            fill: @notSelected;
-            height: 26px;
-        }
+    &>svg {
+        fill: @notSelected;
+        height: 26px;
     }
 }
 
@@ -207,23 +205,6 @@ input, textarea {
         }
     }
 
-    &--description {
-        color: #667085;
-        font-size: 16px;
-        line-height: 1.6;
-        margin: 8px 0 18px;
-        width: calc(100% - 88px);
-        position: relative;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 0 2px;
-
-        @media screen and (max-width: 375px) {
-            width: calc(100% - 44px);
-            margin-top: 12px;
-        }
-    }
-
     &--bottom-line {
         height: 56px;
         display: flex;
@@ -312,7 +293,7 @@ input, textarea {
     &__editable {
         transition: none;
 
-        input, textarea, .deadline {
+        input {
             pointer-events: auto;
         }
 
@@ -340,10 +321,6 @@ input, textarea {
         &:hover {
             border-color: @warning;
         }
-
-        .deadline {
-            background-color: @warning;
-        }
     }
 
     &__expired {
@@ -351,10 +328,6 @@ input, textarea {
 
         &:hover {
             border-color: @danger;
-        }
-
-        .deadline {
-            background-color: @danger;
         }
     }
 
@@ -372,10 +345,27 @@ input, textarea {
         .to-do-item--done-btn {
             background-color: @success;
         }
+    }
+}
 
-        .deadline {
-            background-color: @success;
-        }
+.description {
+    color: @secondary;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 8px 0 18px;
+    width: calc(100% - 88px);
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0 2px;
+
+    &__editable {
+        pointer-events: auto;
+    }
+
+    @media screen and (max-width: 375px) {
+        width: calc(100% - 44px);
+        margin-top: 12px;
     }
 }
 
@@ -389,6 +379,22 @@ input, textarea {
     padding: 16px;
     pointer-events: none;
     margin-right: auto;
+
+    &__editable {
+        pointer-events: auto;
+    }
+
+    &__expires-today {
+        background-color: @warning;
+    }
+
+    &__expired {
+        background-color: @danger;
+    }
+
+    &__done {
+        background-color: @success;
+    }
 
     &--input {
         position: absolute;

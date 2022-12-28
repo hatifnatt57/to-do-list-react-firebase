@@ -1,19 +1,41 @@
-import { useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 
 import dayjs from 'dayjs';
 
 /**
  * Date picker/indicator component.
  */
-export default function Deadline({ initialDate }) {
-  const thisInput = useRef(null);
+const Deadline = forwardRef(function Deadline({ initialDate, done, editable }, ref) {
+  const inputRef = useRef(null);
   const [date, setDate] = useState(initialDate);
+
+  useImperativeHandle(ref, () => {
+    return {
+      value: inputRef.current.value
+    }
+  })
+
+  let modifier = '';
+  if (editable)
+    modifier = ' deadline__editable';
+  else {
+    if (done)
+      modifier = 'done';
+    else if (dayjs().isSame(dayjs(date), 'day'))
+      modifier = 'expires-today';
+    else if (dayjs().isAfter(dayjs(date), 'day'))
+      modifier = 'expired';
+    if (modifier !== '')
+      modifier = ` deadline__${modifier}`;
+  }
+
+  const deadlineClassName = 'deadline' + modifier;
 
   /**
    * Open native date picker.
    */
   function clickHandler() {
-    thisInput.current.showPicker();
+    inputRef.current.showPicker();
   }
 
   /**
@@ -27,9 +49,11 @@ export default function Deadline({ initialDate }) {
   }
 
   return (
-    <button className="deadline" onClick={clickHandler}>
-      <input className="deadline--input" type="date" value={date} onChange={changeHandler} ref={thisInput} />
+    <button className={deadlineClassName} onClick={clickHandler}>
+      <input className="deadline--input" type="date" value={date} onChange={changeHandler} ref={inputRef} />
       {dayjs(date).format('DD.MM.YYYY')}
     </button>
   )
-}
+})
+
+export default Deadline;

@@ -1,10 +1,33 @@
+import { getDownloadURL, ref } from "@firebase/storage";
+import { storage } from "../firebase";
+
 /**
  * Attachment item component.
  */
-export default function AttachmentItem({ attachment, editable, attachmentId, handleDeleteAttachment, handleDownload }) {
+export default function AttachmentItem({ todoId, attachment, editable, attachmentId, handleDeleteAttachment }) {
+  /**
+   * Attachment item filename click handler to be passed as a prop.
+   * 
+   * Download attachment.
+   * 
+   * @param {number} attachmentId Attachment item index in attachments array.
+   */
+  async function handleDownload() {
+    const fileRef = ref(storage, `${todoId}/${attachment}`);
+    const url = await getDownloadURL(fileRef);
+    const link = document.createElement('a');
+    link.style.display = 'none';
+    link.href = url;
+    link.download = attachment;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode.removeChild(link);
+  }
+
   return (
     <li className={`attachment-item${editable ? ' attachment-item__editable' : ''}`}>
-      <button className="attachment-item--download-btn" onClick={() => {handleDownload(attachmentId)}}>{attachment}</button>
+      <button className="attachment-item--download-btn" onClick={handleDownload}>{attachment}</button>
       {editable && (
         <button className="attachment-item--delete-btn" onClick={() => {handleDeleteAttachment(attachmentId)}}>
           <svg viewBox="0 0 20 21">

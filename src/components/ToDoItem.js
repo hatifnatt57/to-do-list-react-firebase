@@ -1,109 +1,117 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import { storage } from '../firebase';
-import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { ref, uploadBytes } from 'firebase/storage';
 
 import dayjs from 'dayjs';
 
 import AttachmentsList from './AttachmentsList';
 import Deadline from './Deadline';
+import { useTodosDispatch } from '../utils/TodosContext';
+import Description from './Description';
 
 /**
  * To-do item component.
  */
-export default function ToDoItem({ todo, todoId, handleDone, deleteById, handleUpdate }) {
-  const thisEl = useRef(null);
+export default function ToDoItem({ todo }) {
+  const componentRef = useRef(null);
+  const descriptionRef = useRef(null);
+  const deadlineRef = useRef(null);
   const [expanded, setExpanded] = useState(false);
   const [editable, setEditable] = useState(false);
+  const dispatch = useTodosDispatch();
+
+  const todoHeight = expanded ? [...componentRef.current.children]
+    .reduce((total, current) => total + current.offsetHeight, 0) + 2 + 'px' : '39px';
+
+  let todoClassName = 'to-do-item';
+  if (expanded) todoClassName += ' to-do-item__expanded';
+  if (editable) todoClassName += ' to-do-item__editable';
+  else if (todo.done) todoClassName += ' to-do-item__done';
+  else if (dayjs().isSame(dayjs(todo.deadline), 'day'))
+    todoClassName += ' to-do-item__expires-today';
+  else if (dayjs().isAfter(dayjs(todo.deadline), 'day'))
+    todoClassName += ' to-do-item__expired';
 
   /**
-   * Count component's content height based on sum of children's height.
+   * Done button click handler.
    * 
-   * @returns {number} Component's content height in px.
+   * Dispatch update.
    */
-  function thisElHeight() {
-    return [...thisEl.current.children].reduce((total, current) => total + current.offsetHeight, 0) + 2;
+  function handleDone() {
+    dispatch({
+      type: 'updated',
+      id: todo.id,
+      changedFields: {
+        done: !todo.done
+      }
+    })
   }
-
-  /**
-   * When expanded state changes - trim textarea whitespace and expand/contract component's UI.
-   */
-  useEffect(() => {
-    const textarea = thisEl.current.querySelector('.to-do-item--description');
-    textarea.style.height = '1px';
-    textarea.style.height = `${textarea.scrollHeight}px`;
-
-    thisEl.current.style.height = `${expanded ? thisElHeight() : 39}px`;
-  }, [expanded]);
 
   /**
    * Expand/contract button click handler.
    * 
+   * Trim textarea whitespace.
    * Toggle expanded state.
    */
   function handleExpand() {
+    descriptionRef.current.recalculateTextareaHeight();
     setExpanded(!expanded);
   }
 
   /**
    * Delete item button click handler.
    * 
-   * Perform delete-item animation, delete item and its associated backend
+   * Perform delete-item animation, dispatch action.
    */
   function handleDelete() {
-    thisEl.current.classList.add('to-do-item__deleted');
+    componentRef.current.classList.add('to-do-item__deleted');
     setTimeout(() => {
-      thisEl.current.style.display = 'none';
-      deleteById(todoId);
+      dispatch({
+        type: 'deleted',
+        id: todo.id
+      })
     }, 300);
   }
-
 
   /**
    * Edit button click handler.
    * 
+   * Focus on title input.
    * Toggle editable state.
    */
   function handleEdit() {
+    componentRef.current.querySelector('.to-do-item--title').focus();
     setEditable(true);
   }
 
   /**
    * Accept button click handler.
    * 
-   * Update app state with input values, set editable state to false.
+   * Validate text inputs, dispatch update, set editable state to false.
    */
   function handleAccept() {
     const 
-      title = thisEl.current.querySelector('.to-do-item--title').value || todo.title,
-      description = thisEl.current.querySelector('.to-do-item--description').value,
-      deadline = thisEl.current.querySelector('.deadline--input').value;
+      title = componentRef.current.querySelector('.to-do-item--title').value || todo.title,
+      description = descriptionRef.current.value || todo.description,
+      deadline = deadlineRef.current.value;
 
-    thisEl.current.querySelector('.to-do-item--title').value = title;
+    componentRef.current.querySelector('.to-do-item--title').value = title;
+    descriptionRef.current.setValue(description);
     
-    const changedItem = { title, description, deadline };
-    handleUpdate(todoId, changedItem);
+    const changedFields = { title, description, deadline };
+    dispatch({
+      type: 'updated',
+      id: todo.id,
+      changedFields
+    });
     setEditable(false);
-  }
-
-  /**
-   * Textarea change handler.
-   * 
-   * Trim textarea whitespace, update component's height if needed.
-   * 
-   * @param {Event} e Change event.
-   */
-  function handleTextareaChange(e) {
-    e.target.style.height = '1px';
-    e.target.style.height = `${e.target.scrollHeight}px`;
-    thisEl.current.style.height = `${thisElHeight()}px`;
   }
 
   /**
    * File input change handler.
    * 
    * Upload files to storage bucket in todo item's folder.
-   * Update app state.
-   * Update component's height.
+   * Dispatch update.
    * 
    * @param {Event} e Change event.
    */
@@ -116,89 +124,38 @@ export default function ToDoItem({ todo, todoId, handleDone, deleteById, handleU
       const fileRef = ref(storage, `${todo.id}/${file.name}`);
       uploadBytes(fileRef, file);
     };
-    handleUpdate(todoId, { attachments: filenames });
-    setTimeout(() => {
-      thisEl.current.style.height = `${thisElHeight()}px`;
-    }, 0);
+    dispatch({
+      type: 'updated',
+      id: todo.id,
+      changedFields: {
+        attachments: filenames
+      }
+    });
   }
 
   /**
-   * Delete attachment button click handler to be passed as a prop.
+   * Calculate and update component's height based on contents' height.
    * 
-   * Delete attachment's file from storage bucket.
-   * Update app state.
-   * Update component's height.
-   * 
-   * @param {number} attachmentId Attachment item index in attachments array.
+   * To be passed as a prop to Description.
    */
-  function handleDeleteAttachment(attachmentId) {
-    const filenames = todo.attachments;
-    const fileRef = ref(storage, `${todo.id}/${filenames[attachmentId]}`);
-    deleteObject(fileRef);
-    filenames.splice(attachmentId, 1);
-    handleUpdate(todoId, { attachments: filenames });
-    setTimeout(() => {
-      thisEl.current.style.height = `${thisElHeight()}px`;
-    }, 0);
-  }
-
-  /**
-   * Attachment item filename click handler to be passed as a prop.
-   * 
-   * Download attachment.
-   * 
-   * @param {number} attachmentId Attachment item index in attachments array.
-   */
-  async function handleDownload(attachmentId) {
-    const filename = todo.attachments[attachmentId];
-    const fileRef = ref(storage, `${todo.id}/${filename}`);
-    const url = await getDownloadURL(fileRef);
-    const link = document.createElement('a');
-    link.style.display = 'none';
-    link.href = url;
-    link.download = filename;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    link.parentNode.removeChild(link);
-  }
-
-  /**
-   * Compare today's date and deadline, return associated class name.
-   * 
-   * @returns {string} Expired/expires-today class name or nothing.
-   */
-  function getExpiredClass() {
-    if (dayjs().isSame(dayjs(todo.deadline), 'day'))
-      return 'to-do-item__expires-today';
-    else if (dayjs().isAfter(dayjs(todo.deadline), 'day'))
-      return 'to-do-item__expired';
-    return '';
+  function recalculateTodoHeight() {
+    componentRef.current.style.height = [...componentRef.current.children]
+      .reduce((total, current) => total + current.offsetHeight, 0) + 2 + 'px';
   }
 
   return (
     <li 
-      className={`
-        to-do-item:
-        ${todo.done ? 'to-do-item__done:' : ''}
-        ${expanded ? 'to-do-item__expanded:' : ''}
-        ${editable ? 'to-do-item__editable:' : ''}
-        ${getExpiredClass()}
-      `
-      .replaceAll('\n', '')
-      .replaceAll(' ', '')
-      .replaceAll(':', ' ')
-      .trim()
-      } 
-      ref={thisEl}
+      className={todoClassName} 
+      ref={componentRef}
+      style={{ height: todoHeight }}
     >
       <div className="to-do-item--main-container">
         <div className="to-do-item--first-line">
           <div className="to-do-item--done-btn-container">
-            <button className="to-do-item--done-btn" onClick={() => {handleDone(todoId)}}></button>
+            <button className="to-do-item--done-btn" onClick={handleDone}></button>
           </div>
           <div className="to-do-item--title-container">
-            <input type="text" className="to-do-item--title" defaultValue={todo.title} />
+            <input type="text" spellCheck="false" className="to-do-item--title" defaultValue={todo.title} />
           </div>
           <button className="to-do-item--expand-btn" onClick={handleExpand}>
             <svg viewBox="0 0 34 21">
@@ -211,37 +168,49 @@ export default function ToDoItem({ todo, todoId, handleDone, deleteById, handleU
             </svg>
           </button>
         </div>
-        <textarea className="to-do-item--description" defaultValue={todo.description} onChange={handleTextareaChange} />
+        <Description
+          initialValue={todo.description}
+          recalculateTodoHeight={recalculateTodoHeight}
+          editable={editable}
+          ref={descriptionRef}
+        />
         <div className="to-do-item--bottom-line">
-          <Deadline initialDate={todo.deadline} />
-          {editable && (
-            <button className="to-do-item--attach-btn" onClick={() => {
-              thisEl.current.querySelector('.to-do-item--attach-btn input').click();
-            }}>
-              <svg viewBox="0 0 27 31">
-                <path d="M2.54552 27.8693C-0.893769 24.3206 -0.829668 18.598 2.6271 15.0621L14.9739 2.43272C17.5824 -0.235595 21.8225 -0.23583 24.4313 2.43272C27.0147 5.07526 27.0178 9.3389 24.4313 11.9846L13.6685 22.983C11.9112 24.7804 9.04002 24.7554 7.31249 22.9242C5.64818 21.1602 5.70156 18.364 7.39796 16.6288L15.8589 7.98585C16.2228 7.6142 16.8191 7.60784 17.1907 7.97167L18.5364 9.28893C18.9081 9.65281 18.9144 10.2491 18.5505 10.6207L10.0905 19.2629C9.80016 19.5598 9.78227 20.0533 10.0523 20.3396C10.3097 20.6123 10.7142 20.6169 10.9757 20.3493L21.7385 9.35091C22.893 8.17003 22.893 6.24743 21.7379 5.0659C20.6084 3.91062 18.7973 3.91003 17.6674 5.0659L5.32049 17.6953C3.27429 19.7884 3.24274 23.1765 5.25039 25.248C7.25228 27.3136 10.4882 27.3162 12.4938 25.2648L22.6215 14.9052C22.9851 14.5333 23.5814 14.5266 23.9533 14.8901L25.2999 16.2065C25.6719 16.5701 25.6786 17.1664 25.315 17.5383L15.1872 27.8979C11.6805 31.4848 6.00817 31.4423 2.54552 27.8693V27.8693Z"/>
+          <Deadline 
+            initialDate={todo.deadline} 
+            done={todo.done}
+            editable={editable}
+            ref={deadlineRef} 
+          />
+          {editable ? (
+            <>
+              <button className="to-do-item--attach-btn" onClick={() => {
+                componentRef.current.querySelector('.to-do-item--attach-btn input').click();
+              }}>
+                <svg viewBox="0 0 27 31">
+                  <path d="M2.54552 27.8693C-0.893769 24.3206 -0.829668 18.598 2.6271 15.0621L14.9739 2.43272C17.5824 -0.235595 21.8225 -0.23583 24.4313 2.43272C27.0147 5.07526 27.0178 9.3389 24.4313 11.9846L13.6685 22.983C11.9112 24.7804 9.04002 24.7554 7.31249 22.9242C5.64818 21.1602 5.70156 18.364 7.39796 16.6288L15.8589 7.98585C16.2228 7.6142 16.8191 7.60784 17.1907 7.97167L18.5364 9.28893C18.9081 9.65281 18.9144 10.2491 18.5505 10.6207L10.0905 19.2629C9.80016 19.5598 9.78227 20.0533 10.0523 20.3396C10.3097 20.6123 10.7142 20.6169 10.9757 20.3493L21.7385 9.35091C22.893 8.17003 22.893 6.24743 21.7379 5.0659C20.6084 3.91062 18.7973 3.91003 17.6674 5.0659L5.32049 17.6953C3.27429 19.7884 3.24274 23.1765 5.25039 25.248C7.25228 27.3136 10.4882 27.3162 12.4938 25.2648L22.6215 14.9052C22.9851 14.5333 23.5814 14.5266 23.9533 14.8901L25.2999 16.2065C25.6719 16.5701 25.6786 17.1664 25.315 17.5383L15.1872 27.8979C11.6805 31.4848 6.00817 31.4423 2.54552 27.8693V27.8693Z"/>
+                </svg>
+                <input type="file" multiple onChange={handleFileInputChange} />
+              </button>
+              <button className="to-do-item--accept-btn" onClick={handleAccept}>
+                <svg viewBox="0 0 36 27">
+                  <path d="M12.2984 26.0803L0.884355 14.6663C0.198623 13.9806 0.198623 12.8688 0.884355 12.183L3.36766 9.69958C4.05339 9.01378 5.1653 9.01378 5.85103 9.69958L13.5401 17.3885L30.0091 0.919573C30.6948 0.23384 31.8067 0.23384 32.4925 0.919573L34.9758 3.40294C35.6615 4.08868 35.6615 5.20051 34.9758 5.88631L14.7817 26.0804C14.0959 26.7661 12.9841 26.7661 12.2984 26.0803V26.0803Z"/>
+                </svg>
+              </button>
+            </>
+          ) : (
+            <button className="to-do-item--edit-btn" onClick={handleEdit}>
+              <svg viewBox="0 0 27 27">
+                <path d="M15.1344 5.23489L21.6352 11.7357L7.5189 25.852L1.72288 26.4919C0.94696 26.5777 0.291391 25.9216 0.377717 25.1457L1.02262 19.3456L15.1344 5.23489ZM25.656 4.26702L22.6036 1.21464C21.6515 0.262518 20.1072 0.262518 19.1551 1.21464L16.2835 4.08625L22.7844 10.5871L25.656 7.71549C26.6081 6.76286 26.6081 5.21915 25.656 4.26702V4.26702Z"/>
               </svg>
-              <input type="file" multiple onChange={handleFileInputChange} />
             </button>
           )}
-          <button className="to-do-item--edit-btn" onClick={handleEdit}>
-            <svg viewBox="0 0 27 27">
-              <path d="M15.1344 5.23489L21.6352 11.7357L7.5189 25.852L1.72288 26.4919C0.94696 26.5777 0.291391 25.9216 0.377717 25.1457L1.02262 19.3456L15.1344 5.23489ZM25.656 4.26702L22.6036 1.21464C21.6515 0.262518 20.1072 0.262518 19.1551 1.21464L16.2835 4.08625L22.7844 10.5871L25.656 7.71549C26.6081 6.76286 26.6081 5.21915 25.656 4.26702V4.26702Z"/>
-            </svg>
-          </button>
-          <button className="to-do-item--accept-btn" onClick={handleAccept}>
-            <svg viewBox="0 0 36 27">
-              <path d="M12.2984 26.0803L0.884355 14.6663C0.198623 13.9806 0.198623 12.8688 0.884355 12.183L3.36766 9.69958C4.05339 9.01378 5.1653 9.01378 5.85103 9.69958L13.5401 17.3885L30.0091 0.919573C30.6948 0.23384 31.8067 0.23384 32.4925 0.919573L34.9758 3.40294C35.6615 4.08868 35.6615 5.20051 34.9758 5.88631L14.7817 26.0804C14.0959 26.7661 12.9841 26.7661 12.2984 26.0803V26.0803Z"/>
-            </svg>
-          </button>
         </div>
       </div>
       {todo.attachments.length > 0 &&
         <AttachmentsList 
+          id={todo.id}
           attachments={todo.attachments} 
           editable={editable} 
-          handleDeleteAttachment={handleDeleteAttachment}
-          handleDownload={handleDownload}
         />
       }
     </li>
